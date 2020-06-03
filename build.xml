@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Sched Struct Retriever
+  ~ Copyright (C) 2020 Francesco Ciraolo
+  ~
+  ~ This program is free software: you can redistribute it and/or modify it under the terms of the GNU
+  ~ General Public License as published by the Free Software Foundation, either version 3 of the License,
+  ~ or (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  ~ without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  ~ See the GNU General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU General Public License along with this program.
+  ~ If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<project name="schedstructsretriever" default="library">
+
+    <property name="compiler.debug" value="on"/>
+    <property name="compiler.generate.no.warnings" value="off"/>
+    <property name="compiler.args" value=""/>
+    <property name="compiler.max.memory" value="700m"/>
+    <patternset id="ignored.files">
+        <exclude name="**/*.hprof/**"/>
+        <exclude name="**/*.pyc/**"/>
+        <exclude name="**/*.pyo/**"/>
+        <exclude name="**/*.rbc/**"/>
+        <exclude name="**/*.yarb/**"/>
+        <exclude name="**/*~/**"/>
+        <exclude name="**/.DS_Store/**"/>
+        <exclude name="**/.git/**"/>
+        <exclude name="**/.hg/**"/>
+        <exclude name="**/.svn/**"/>
+        <exclude name="**/CVS/**"/>
+        <exclude name="**/__pycache__/**"/>
+        <exclude name="**/_svn/**"/>
+        <exclude name="**/vssver.scc/**"/>
+        <exclude name="**/vssver2.scc/**"/>
+    </patternset>
+    <patternset id="library.patterns">
+        <include name="*.egg"/>
+        <include name="*.jar"/>
+        <include name="*.ear"/>
+        <include name="*.ane"/>
+        <include name="*.klib"/>
+        <include name="*.swc"/>
+        <include name="*.war"/>
+        <include name="*.zip"/>
+    </patternset>
+    <patternset id="compiler.resources">
+        <exclude name="**/?*.java"/>
+        <exclude name="**/?*.form"/>
+        <exclude name="**/?*.class"/>
+        <exclude name="**/?*.groovy"/>
+        <exclude name="**/?*.scala"/>
+        <exclude name="**/?*.flex"/>
+        <exclude name="**/?*.kt"/>
+        <exclude name="**/?*.clj"/>
+        <exclude name="**/?*.aj"/>
+    </patternset>
+
+    <dirname property="basedir" file="${ant.file}"/>
+
+    <property name="compiler.args.library" value="-encoding UTF-8 ${compiler.args}"/>
+    <property name="compiler.args.example" value="-encoding UTF-8 ${compiler.args}"/>
+
+    <property name="outdir" value="${basedir}/out"/>
+    <property name="library.outdir" value="${outdir}/library/schedstructsretriever"/>
+    <property name="example.outdir" value="${outdir}/example/schedstructsretriever"/>
+    <property name="library:jar" value="${basedir}/sched_structs_retriever.jar"/>
+    <property name="example:jar" value="${basedir}/example.jar"/>
+
+    <path id="library.classpath"/>
+    <path id="example.classpath">
+        <dirset dir="${library.outdir}"/>
+    </path>
+
+    <patternset id="excluded.library">
+        <patternset refid="ignored.files"/>
+    </patternset>
+
+    <patternset id="excluded.example">
+        <patternset refid="ignored.files"/>
+    </patternset>
+
+    <patternset id="excluded.compile.library">
+        <patternset refid="excluded.library"/>
+    </patternset>
+    <patternset id="excluded.compile.example">
+        <patternset refid="excluded.example"/>
+    </patternset>
+
+    <path id="library.sourcepath">
+        <dirset dir="${basedir}">
+            <include name="src"/>
+        </dirset>
+    </path>
+    <path id="example.sourcepath">
+        <dirset dir="${basedir}">
+            <include name="example"/>
+        </dirset>
+    </path>
+
+    <target name="build.library" description="Compile library classes">
+        <mkdir dir="${library.outdir}"/>
+        <javac destdir="${library.outdir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}"
+               memorymaximumsize="${compiler.max.memory}" fork="true">
+            <compilerarg line="${compiler.args.library}"/>
+            <classpath refid="library.classpath"/>
+            <src refid="library.sourcepath"/>
+            <patternset refid="excluded.compile.library"/>
+        </javac>
+        <copy todir="${library.outdir}">
+            <fileset dir="${basedir}/src">
+                <patternset refid="compiler.resources"/>
+                <type type="file"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="build.example" description="Compile example classes">
+        <mkdir dir="${example.outdir}"/>
+        <javac destdir="${example.outdir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}"
+               memorymaximumsize="${compiler.max.memory}" fork="true">
+            <compilerarg line="${compiler.args.example}"/>
+            <classpath refid="example.classpath"/>
+            <src refid="example.sourcepath"/>
+            <patternset refid="excluded.compile.library"/>
+        </javac>
+        <copy todir="${example.outdir}">
+            <fileset dir="${basedir}/example">
+                <patternset refid="compiler.resources"/>
+                <type type="file"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="clean" description="Cleanup classes">
+        <delete dir="${basedir}/out"/>
+    </target>
+
+    <target name="library" depends="clean, build.library"
+            description="Build &#39;sched_structs_retriever.jar&#39;; the library jar">
+        <jar destfile="${library:jar}" duplicate="preserve" filesetmanifest="mergewithoutmain">
+            <zipfileset dir="${library.outdir}"/>
+        </jar>
+    </target>
+
+    <target name="example" depends="build.library, build.example"
+            description="Build &#39;example.jar&#39;; the example jar">
+        <jar manifest="example/META-INF/MANIFEST.MF" destfile="${example:jar}" duplicate="preserve"
+             filesetmanifest="mergewithoutmain">
+            <zipfileset dir="${library.outdir}"/>
+            <zipfileset dir="${example.outdir}"/>
+        </jar>
+    </target>
+
+    <target name="all" depends="library, example"
+            description="Build &#39;sched_structs_retriever.jar&#39;, &#39;example.jar&#39; and clean classes">
+        <antcall target="clean"/>
+    </target>
+
+    <target name="clean.all" depends="clean" description="Cleanup classes and jars">
+        <delete file="${library:jar}"/>
+        <delete file="${example:jar}"/>
+    </target>
+
+</project>
