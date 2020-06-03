@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"com.github.francescociraolo.bcctrace"},{"l":"com.github.francescociraolo.scheddomains"},{"l":"com.github.francescociraolo.schedstructretriever"}]
