@@ -18,7 +18,16 @@ package com.github.francescociraolo.bcctrace;
 
 import java.util.stream.Stream;
 
+/**
+ * Simple interface to handle a trace stream.
+ */
 public interface TraceStreamHandler {
 
+    /**
+     * Provide a {@link Stream<ScrapedOutputLine>} and allow to work on it. Please note: the stream must be stopped
+     * inside this method implementation; otherwise the execution will be endless.
+     *
+     * @param stream the results' stream of required tracing process
+     */
     void streamOperation(Stream<ScrapedOutputLine> stream);
 }
