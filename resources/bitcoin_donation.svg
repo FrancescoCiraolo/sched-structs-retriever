@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="96" height="20">
+	<linearGradient id="b" x2="0" y2="100%">
+		<stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+		<stop offset="1" stop-opacity=".1"/>
+	</linearGradient>
+	<clipPath id="a">
+		<rect width="96" height="20" rx="3" fill="#fff"/>
+	</clipPath>
+	<g clip-path="url(#a)">
+		<path fill="#555" d="M0 0h49v20H0z"/>
+		<path fill="#f7931a" d="M49 0h47v20H49z"/>
+		<path fill="url(#b)" d="M0 0h96v20H0z"/>
+	</g>
+	<g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
+		<text x="24.5" y="15" fill="#010101" fill-opacity=".3" xlink:href="http://donatecoins.org/btc/1DF9jgzftTFn4ZnDV2YEjUtZ3uHtBywj57">Donate</text>
+		<text x="24.5" y="14">Donate</text>
+		<text x="71.5" y="15" fill="#010101" fill-opacity=".3" xlink:href="http://donatecoins.org/btc/1DF9jgzftTFn4ZnDV2YEjUtZ3uHtBywj57">Bitcoin</text>
+		<text x="71.5" y="14">Bitcoin</text>
+	</g>
+	</svg>
