@@ -1,3 +1,5 @@
+### [![Donate with Bitcoin](https://en.cryptobadges.io/badge/micro/3AijtcgVtaV7uKhwUibjSribPF7L13dJzP)](https://en.cryptobadges.io/donate/3AijtcgVtaV7uKhwUibjSribPF7L13dJzP)
+
 # Sched Structs Retriever
 
 This library provides a way to get a picture of linux kernel sched domains structs.
