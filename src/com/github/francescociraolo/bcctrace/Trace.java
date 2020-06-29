@@ -16,23 +16,23 @@ package com.github.francescociraolo.bcctrace;
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-import com.github.francescociraolo.schedstructsretriever.Pair;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Optional;
+import java.util.Scanner;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Trace's basic Java Wrapper.
- *
+ * <p>
  * It implements, currently, only a method which generalize an invocation of trace's script for retrieving information
  * structured from each line.
- * {@link #startTracing(Path, String, Request[]) startTracing} requires the relative {@link Path Path} to the
- * header of interest, the signature of requested method and a number of {@link Request Request}s which defines the
- * information needed and the type of each one.
- * The returned {@link Tracing Tracing} object provide the stream of information retrieved from the output lines of
- * trace script.
+ * {@link #startTracing(TraceStreamHandler, Path, String, Request[]) startTracing} requires the relative
+ * {@link Path Path} to the header of interest, the signature of requested method and a number of
+ * {@link Request Request}s which defines the information needed and the type of each one.
  *
  * @author Francesco Ciraolo
  */
@@ -42,10 +42,11 @@ public class Trace {
     private final String traceBin;
 
     /**
+     * The constructor requires a valid kernelSourcePath and the bccPath, if bcc isn't installed
+     * in a default path.
      *
-     *
-     * @param kernelSourcePath
-     * @param bccPath
+     * @param kernelSourcePath the path to a valid linux kernel source
+     * @param bccPath the path, optional, of a bcc installation directory
      */
     public Trace(String kernelSourcePath, String bccPath) {
         this.kernelSourcePath = kernelSourcePath;
@@ -61,44 +62,121 @@ public class Trace {
         this.traceBin = trace.toString();
     }
 
-    public Tracing startTracing(Path relativeHeaderPath,
-                                String signature,
-                                Request<?>... requests) throws IOException {
+    /**
+     * Start a tracing process, managing the results with the passed {@link TraceStreamHandler}.
+     *
+     * @param handler the handler to which delegate the stream processing
+     * @param relativeHeaderPath the path to a required header, relative to linux source directory
+     * @param signature the method signature, useful for sync with requests variables' name
+     * @param requests the required variables, their name and their type
+     * @throws IOException if the process launch cause some problem
+     */
+    public void startTracing(TraceStreamHandler handler,
+                             Path relativeHeaderPath,
+                             String signature,
+                             Request<?>... requests) throws IOException {
 
         var header = Path.of(kernelSourcePath).resolve(relativeHeaderPath);
 
-        if (!Files.exists(header)) {
-            throw new RuntimeException("Missing header file");
-        }
+        if (!Files.exists(header)) throw new RuntimeException("Missing header file");
 
-        var request = Arrays.stream(requests)
-                .map(Request::getTracePair)
-                .reduce(Request::mergeRequestPairs)
-                .orElse(new Pair<>("", ""));
+        var format = new StringBuilder();
+        var variables = new StringBuilder();
+
+        for (var request : requests) {
+            format.append(String.format("[%s=%s]", request.getName(), request.getFormat()));
+            if (variables.length() > 0) variables.append(", ");
+            variables.append(request.getVar());
+        }
 
         var command = String.format(
                 "%s -I %s '%s \"%s\", %s'",
                 traceBin,
                 header.toString(),
                 signature,
-                request.getFirst(),
-                request.getSecond());
-
-        System.out.println(command);
+                format.toString(),
+                variables.toString());
 
         var process = new ProcessBuilder("sudo", "bash", "-c", command).start();
-        new Thread(() -> {
-            var errorStream = process.getErrorStream();
-            try {
-                while (process.isAlive()) {
-                    if (errorStream.available() > 0) {
-                        System.out.println(new String(errorStream.readAllBytes()));
+
+        var shutdownHook = new Thread(process::destroy);
+
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
+
+        var scanner = new Scanner(process.getInputStream());
+
+        var stream = Stream
+                .generate(() -> {
+                    synchronized (scanner) {
+                        return scanner.nextLine();
                     }
-                }
-            } catch (IOException ignored) {}
-        })
-                .start();
-        return new Tracing(process);
+                })
+                .map(Trace::extractResults)
+                .flatMap(Optional::stream);
+
+        handler.streamOperation(stream);
+
+        process.destroy();
+
+        Runtime.getRuntime().removeShutdownHook(shutdownHook);
+    }
+
+    /**
+     * Pattern to retrieve the results from trace lines.
+     */
+    private static final Pattern PATTERN0 = Pattern.compile("\\[([^=]*)=([^]]*)]");
+
+    /**
+     * Just use the pattern for match <code>s</code> and put each name-value pair into a {@link ScrapedOutputLine}.
+     *
+     * @param s a trace's scripts output line.
+     * @return a {@link Optional} containing the {@link ScrapedOutputLine} extracted from line if found or an empty one otherwise.
+     */
+    private static Optional<ScrapedOutputLine> extractResults(String s) {
+        var map = new HashMap<String, String>();
+        var matcher = PATTERN0.matcher(s);
+        while (matcher.find()) map.put(matcher.group(1), matcher.group(2));
+        if (map.isEmpty()) return Optional.empty();
+        return Optional.of(new ScrapedOutputLineMap(map));
+    }
+
+    /**
+     * Simple implementation of {@link ScrapedOutputLine} using an HashMap to store values.
+     */
+    private static class ScrapedOutputLineMap implements ScrapedOutputLine {
+
+        private final HashMap<String, String> values;
+
+        public ScrapedOutputLineMap(HashMap<String, String> values) {
+            this.values = values;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            var eq = o instanceof ScrapedOutputLineMap;
+            if (eq) {
+                eq = values.equals(((ScrapedOutputLineMap) o).values);
+            }
+            return eq;
+        }
+
+        public <T> T get(Request<T> request) {
+            T res = null;
+            var name = request.getName();
+            if (values.containsKey(name))
+                res = request.castStringOutput(values.get(name));
+            return res;
+        }
+
+        @Override
+        public int hashCode() {
+            return values.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return values.toString();
+        }
     }
 
 }

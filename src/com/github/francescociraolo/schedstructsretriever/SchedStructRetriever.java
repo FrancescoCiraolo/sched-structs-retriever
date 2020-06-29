@@ -29,7 +29,7 @@ import static com.github.francescociraolo.bcctrace.ValueType.*;
 
 /**
  * Provides methods for retrieving the SchedDomains model.
- *
+ * <p>
  * It works with a Trace to get domains struct variables and a Trace to obtain the groups struct data.
  *
  * @author Francesco Ciraolo
@@ -37,12 +37,13 @@ import static com.github.francescociraolo.bcctrace.ValueType.*;
 public class SchedStructRetriever {
 
     /**
+     *
      * Return a {@link SchedDomains} object after retrieving the data using {@link Trace}.
      *
      * @param kernelPath the path of a linux kernel source.
-     * @param bccPath the path to bcc directory.
+     * @param bccPath    the path to bcc directory.
      * @return a {@link SchedDomains} of sched domain topology in current runtime.
-     * @throws IOException could be thrown from trace's script process mainly.
+     * @throws IOException   could be thrown from trace's script process mainly.
      * @throws LinkException could be thrown in case of inconsistent structures.
      */
     public static SchedDomains getSchedDomains(String kernelPath, String bccPath) throws IOException, LinkException {
@@ -54,16 +55,17 @@ public class SchedStructRetriever {
      *
      * @param traceTool a {@link Trace} used to retrieve the information.
      * @return a {@link SchedDomains} of sched domain topology in current runtime.
-     * @throws IOException could be thrown from trace's script process mainly.
+     * @throws IOException   could be thrown from trace's script process mainly.
      * @throws LinkException could be thrown in case of inconsistent structures.
      */
     public static SchedDomains getSchedDomains(Trace traceTool) throws IOException, LinkException {
 
-        var i = SchedDomains.cpuCount();
-        var d = SchedDomains.domainsCount();
+        var cpuCount = SchedDomains.cpuCount();
+        var domainsCount = SchedDomains.domainsCount();
 
-        var schedDomainManager = new SchedDomainManager(i);
+        var schedDomainManager = new SchedDomainManager(cpuCount);
 
+        //The following requests are required to build the domains and their hierarchies.
         var cpu = new Request<>("cpu", D, "this_cpu");
         var name = new Request<>("name", S, "sd->name");
         var domainAddr = new Request<>("address", LU, "sd");
@@ -72,41 +74,52 @@ public class SchedStructRetriever {
         var span = new Request<>("span", MASK, "sd->span[0]");
         var group = new Request<>("groups", LU, "sd->groups");
 
-        var tracing = traceTool.startTracing(
-                Path.of("include/linux/sched/topology.h"),
-                "load_balance(int this_cpu, struct rq *this_rq, struct sched_domain *sd)",
-                cpu, name, domainAddr, child, parent, span, group);
-
-        tracing
-                .getStream()
-                .distinct()
-                .limit(d)
-                .forEach(r -> schedDomainManager.addDomain(r.get(domainAddr),
-                        r.get(cpu),
-                        r.get(span),
-                        r.get(group),
-                        r.get(child),
-                        r.get(parent)));
-        tracing.close();
+        traceTool
+                /*
+                    Following the lambda implementation of a TraceStreamHandler;
+                    in particular its goal is to read each different lines, limited to domainsCount,
+                    and pass their scraped Domains to schedDomainManager.
+                 */
+                .startTracing(stream -> stream
+                                .distinct()
+                                .limit(domainsCount)
+                                .forEach(line ->
+                                        schedDomainManager.addDomain(
+                                                line.get(domainAddr),
+                                                line.get(cpu),
+                                                line.get(span),
+                                                line.get(group),
+                                                line.get(child),
+                                                line.get(parent))),
+                        Path.of("include/linux/sched/topology.h"),
+                        "load_balance(int this_cpu, struct rq *this_rq, struct sched_domain *sd)",
+                        cpu, name, domainAddr, child, parent, span, group);
 
         var progression = new TwoSetProgression<>(schedDomainManager.getGroupsAddresses());
 
+        //The following requests are required to build the groups and to fill them.
         var groupAddr = new Request<>("address", LU, "sg");
         var cpumask = new Request<>("cpumask", MASK, "sg->cpumask[0]");
         var next = new Request<>("next", LU, "sg->next");
 
-        tracing = traceTool.startTracing(
-                Path.of("kernel/sched/sched.h"),
-                "group_balance_cpu(struct sched_group *sg)",
-                groupAddr, cpumask, next);
-
-        tracing
-                .getStream()
-                .takeWhile(r -> !progression.isResearchCompleted())
-                .filter(r -> progression.update(r.get(groupAddr), r.get(next)))
-                .forEach(r -> schedDomainManager.addGroup(r.get(groupAddr), r.get(cpumask), r.get(next)));
-
-        tracing.close();
+        traceTool
+                /*
+                    Following the lambda implementation of a TraceStreamHandler;
+                    in particular its goal is to read each different lines, until all groups are read,
+                    and pass their scraped Group object to schedDomainManager.
+                 */
+                .startTracing(
+                        stream -> stream
+                                .takeWhile(line -> !progression.isResearchCompleted())
+                                .filter(line -> progression.update(line.get(groupAddr), line.get(next)))
+                                .forEach(line ->
+                                        schedDomainManager.addGroup(
+                                                line.get(groupAddr),
+                                                line.get(cpumask),
+                                                line.get(next))),
+                        Path.of("kernel/sched/sched.h"),
+                        "group_balance_cpu(struct sched_group *sg)",
+                        groupAddr, cpumask, next);
 
         return schedDomainManager.build();
     }

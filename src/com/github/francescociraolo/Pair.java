@@ -1,4 +1,4 @@
-package com.github.francescociraolo.bcctrace;
+package com.github.francescociraolo;
 
 /*
  * Sched Struct Retriever
@@ -16,24 +16,30 @@ package com.github.francescociraolo.bcctrace;
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-import java.nio.file.Path;
-
 /**
- * Interface used by {@link Trace Trace} class for return collection of resulting values for each line.
+ * Just a pair useful for stream utility
  *
- * Just add a method which has as arg a {@link Request Request} object, and return the got string casted by
- * {@link ValueCaster ValueCaster} provided by {@link Request}
+ * @param <F> the type of first value
+ * @param <S> the type of second value
  *
  * @author Francesco Ciraolo
  */
-public interface ScrapedOutputLine {
+public class Pair<F, S> {
 
-    /**
-     * Return the variable associated to the request name, if present.
-     *
-     * @param request the request named as in the {@link Trace#startTracing(TraceStreamHandler, Path, String, Request[])} invocation.
-     * @param <T> actual type of the variable.
-     * @return <code>T</code> object of the variable value.
-     */
-    <T> T get(Request<T> request);
+    private final F first;
+    private final S second;
+
+    public Pair(F first, S second) {
+        this.first = first;
+        this.second = second;
+    }
+
+    public F getFirst() {
+        return first;
+    }
+
+    public S getSecond() {
+        return second;
+    }
+
 }

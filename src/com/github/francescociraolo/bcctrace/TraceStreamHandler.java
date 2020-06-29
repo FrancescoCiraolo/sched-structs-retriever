@@ -1,4 +1,4 @@
-package com.github.francescociraolo.schedstructsretriever;
+package com.github.francescociraolo.bcctrace;
 
 /*
  * Sched Struct Retriever
@@ -16,30 +16,9 @@ package com.github.francescociraolo.schedstructsretriever;
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * Just a pair useful for stream utility
- *
- * @param <F> the type of first value
- * @param <S> the type of second value
- *
- * @author Francesco Ciraolo
- */
-public class Pair<F, S> {
+import java.util.stream.Stream;
 
-    private final F first;
-    private final S second;
+public interface TraceStreamHandler {
 
-    public Pair(F first, S second) {
-        this.first = first;
-        this.second = second;
-    }
-
-    public F getFirst() {
-        return first;
-    }
-
-    public S getSecond() {
-        return second;
-    }
-
+    void streamOperation(Stream<ScrapedOutputLine> stream);
 }

@@ -16,12 +16,9 @@ package com.github.francescociraolo.bcctrace;
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-import com.github.francescociraolo.schedstructsretriever.Pair;
-
-import java.nio.file.Path;
-
 /**
- * Key component of {@link Trace Trace}'s {@link Trace#startTracing(Path, String, Request[]) startTracing} method.
+ * Key component of {@link Trace Trace}'s
+ * {@link Trace#startTracing(TraceStreamHandler, java.nio.file.Path, String, Request[]) startTracing} method.
  * It's used for describe which variables are required from the traced function and their actual types.
  *
  * It's useful for simplify the stream handling with previous defined type.
@@ -31,9 +28,9 @@ import java.nio.file.Path;
  */
 public class Request<T> {
 
-    final String name;
-    final ValueType<T> type;
-    final String var;
+    private final String name;
+    private final ValueType<T> type;
+    private final String var;
 
     /**
      * Defines a <code>Request</code> for manage a variable from the kernel function.
@@ -48,15 +45,20 @@ public class Request<T> {
         this.var = var;
     }
 
-    T castStringOutput(String value) {
+    public T castStringOutput(String value) {
         return type.getValueCaster().cast(value);
     }
 
-    Pair<String, String> getTracePair() {
-        return new Pair<>(String.format("[%s=%s]", name, type.getFormat()), var);
+    public String getFormat() {
+        return type.getFormat();
     }
 
-    static Pair<String, String> mergeRequestPairs(Pair<String, String> p0, Pair<String, String> p1) {
-        return new Pair<>(p0.getFirst() + p1.getFirst(), String.format("%s, %s", p0.getSecond(), p1.getSecond()));
+    public String getName() {
+        return name;
     }
+
+    public String getVar() {
+        return var;
+    }
+
 }
