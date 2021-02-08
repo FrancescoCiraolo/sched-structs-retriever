@@ -84,9 +84,9 @@ public class Trace {
         var variables = new StringBuilder();
 
         for (var request : requests) {
-            format.append(String.format("[%s=%s]", request.getName(), request.getFormat()));
+            format.append(String.format("[%s=%s]", request.getName(), request.getValueType().getFormat()));
             if (variables.length() > 0) variables.append(", ");
-            variables.append(request.getVar());
+            variables.append(request.getVariableReference());
         }
 
         var command = String.format(
@@ -160,11 +160,11 @@ public class Trace {
             return eq;
         }
 
-        public <T> T get(Request<T> request) {
+        public <T> T get(RequestHeader<T> requestHeader) {
             T res = null;
-            var name = request.getName();
+            var name = requestHeader.getName();
             if (values.containsKey(name))
-                res = request.castStringOutput(values.get(name));
+                res = requestHeader.castVariable(values.get(name));
             return res;
         }
 

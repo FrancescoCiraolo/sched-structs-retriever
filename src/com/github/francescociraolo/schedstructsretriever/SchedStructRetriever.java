@@ -66,13 +66,13 @@ public class SchedStructRetriever {
         var schedDomainManager = new SchedDomainManager(cpuCount);
 
         //The following requests are required to build the domains and their hierarchies.
-        var cpu = new Request<>("cpu", D, "this_cpu");
-        var name = new Request<>("name", S, "sd->name");
-        var domainAddr = new Request<>("address", LU, "sd");
-        var child = new Request<>("child", LU, "sd->child");
-        var parent = new Request<>("parent", LU, "sd->parent");
-        var span = new Request<>("span", MASK, "sd->span[0]");
-        var group = new Request<>("groups", LU, "sd->groups");
+        var cpu = Request.getSimpleRequest("cpu", D, "this_cpu");
+        var name = Request.getSimpleRequest("name", S, "sd->name");
+        var domainAddr = Request.getSimpleRequest("address", LU, "sd");
+        var child = Request.getSimpleRequest("child", LU, "sd->child");
+        var parent = Request.getSimpleRequest("parent", LU, "sd->parent");
+        var span = Request.getSimpleRequest("span", MASK, "sd->span[0]");
+        var group = Request.getSimpleRequest("groups", LU, "sd->groups");
 
         traceTool
                 /*
@@ -98,9 +98,9 @@ public class SchedStructRetriever {
         var progression = new TwoSetProgression<>(schedDomainManager.getGroupsAddresses());
 
         //The following requests are required to build the groups and to fill them.
-        var groupAddr = new Request<>("address", LU, "sg");
-        var cpumask = new Request<>("cpumask", MASK, "sg->cpumask[0]");
-        var next = new Request<>("next", LU, "sg->next");
+        var groupAddr = Request.getSimpleRequest("address", LU, "sg");
+        var cpumask = Request.getSimpleRequest("cpumask", MASK, "sg->cpumask[0]");
+        var next = Request.getSimpleRequest("next", LU, "sg->next");
 
         traceTool
                 /*
