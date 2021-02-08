@@ -18,7 +18,7 @@ package com.github.francescociraolo.bcctrace;
 
 /**
  * Key component of {@link Trace Trace}'s
- * {@link Trace#startTracing(TraceStreamHandler, java.nio.file.Path, String, Request[]) startTracing} method.
+ * {@link Trace#startTracing(TraceStreamHandler, java.util.Collection, String, Request[]) startTracing} method.
  * It's used for describe which variables are required from the traced function and their actual types.
  *
  * It's useful for simplify the stream handling with previous defined type.

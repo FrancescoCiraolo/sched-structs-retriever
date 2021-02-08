@@ -19,10 +19,14 @@ package com.github.francescociraolo.bcctrace;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.rmi.RemoteException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -30,7 +34,7 @@ import java.util.stream.Stream;
  * <p>
  * It implements, currently, only a method which generalize an invocation of trace's script for retrieving information
  * structured from each line.
- * {@link #startTracing(TraceStreamHandler, Path, String, Request[]) startTracing} requires the relative
+ * {@link #startTracing(TraceStreamHandler, Collection, String, Request[]) startTracing} requires the relative
  * {@link Path Path} to the header of interest, the signature of requested method and a number of
  * {@link Request Request}s which defines the information needed and the type of each one.
  *
@@ -38,20 +42,15 @@ import java.util.stream.Stream;
  */
 public class Trace {
 
-    private final String kernelSourcePath;
     private final String traceBin;
 
     /**
      * The constructor requires a valid kernelSourcePath and the bccPath, if bcc isn't installed
      * in a default path.
      *
-     * @param kernelSourcePath the path to a valid linux kernel source
      * @param bccPath the path, optional, of a bcc installation directory
      */
-    public Trace(String kernelSourcePath, String bccPath) {
-        this.kernelSourcePath = kernelSourcePath;
-
-        if (!Files.exists(Path.of(kernelSourcePath))) throw new RuntimeException("Missing kernel source");
+    public Trace(String bccPath) {
 
         Path trace = null;
         if (bccPath != null) trace = Path.of(bccPath, "tools", "trace");
@@ -66,19 +65,27 @@ public class Trace {
      * Start a tracing process, managing the results with the passed {@link TraceStreamHandler}.
      *
      * @param handler the handler to which delegate the stream processing
-     * @param relativeHeaderPath the path to a required header, relative to linux source directory
+     * @param headersPaths collections of paths of headers
      * @param signature the method signature, useful for sync with requests variables' name
      * @param requests the required variables, their name and their type
      * @throws IOException if the process launch cause some problem
      */
     public void startTracing(TraceStreamHandler handler,
-                             Path relativeHeaderPath,
+                             Collection<Path> headersPaths,
                              String signature,
                              Request<?>... requests) throws IOException {
 
-        var header = Path.of(kernelSourcePath).resolve(relativeHeaderPath);
+        var missingHeaders = headersPaths
+                .stream()
+                .filter(Predicate.not(Files::exists))
+                .collect(Collectors.toSet());
 
-        if (!Files.exists(header)) throw new RuntimeException("Missing header file");
+        if (!missingHeaders.isEmpty())
+            throw new RemoteException(String.format("Missing header files: %s",
+                    missingHeaders
+                            .stream()
+                            .map(Path::toString)
+                            .collect(Collectors.joining("; "))));
 
         var format = new StringBuilder();
         var variables = new StringBuilder();
@@ -90,9 +97,9 @@ public class Trace {
         }
 
         var command = String.format(
-                "%s -I %s '%s \"%s\", %s'",
+                "%s -I '%s' '%s \"%s\", %s'",
                 traceBin,
-                header.toString(),
+                headersPaths.stream().map(Path::toString).collect(Collectors.joining(": ")),
                 signature,
                 format.toString(),
                 variables.toString());

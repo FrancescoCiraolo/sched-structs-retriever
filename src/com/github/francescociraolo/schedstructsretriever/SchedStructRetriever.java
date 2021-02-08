@@ -24,6 +24,7 @@ import com.github.francescociraolo.scheddomains.SchedDomains;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Set;
 
 import static com.github.francescociraolo.bcctrace.ValueType.*;
 
@@ -47,7 +48,7 @@ public class SchedStructRetriever {
      * @throws LinkException could be thrown in case of inconsistent structures.
      */
     public static SchedDomains getSchedDomains(String kernelPath, String bccPath) throws IOException, LinkException {
-        return getSchedDomains(new Trace(kernelPath, bccPath));
+        return getSchedDomains(Path.of(kernelPath), new Trace(bccPath));
     }
 
     /**
@@ -58,7 +59,7 @@ public class SchedStructRetriever {
      * @throws IOException   could be thrown from trace's script process mainly.
      * @throws LinkException could be thrown in case of inconsistent structures.
      */
-    public static SchedDomains getSchedDomains(Trace traceTool) throws IOException, LinkException {
+    public static SchedDomains getSchedDomains(Path kernelPath, Trace traceTool) throws IOException, LinkException {
 
         var cpuCount = SchedDomains.cpuCount();
         var domainsCount = SchedDomains.domainsCount();
@@ -91,7 +92,7 @@ public class SchedStructRetriever {
                                                 line.get(group),
                                                 line.get(child),
                                                 line.get(parent))),
-                        Path.of("include/linux/sched/topology.h"),
+                        Set.of(kernelPath.resolve("include/linux/sched/topology.h")),
                         "load_balance(int this_cpu, struct rq *this_rq, struct sched_domain *sd)",
                         cpu, name, domainAddr, child, parent, span, group);
 
@@ -117,7 +118,7 @@ public class SchedStructRetriever {
                                                 line.get(groupAddr),
                                                 line.get(cpumask),
                                                 line.get(next))),
-                        Path.of("kernel/sched/sched.h"),
+                        Set.of(kernelPath.resolve("kernel/sched/sched.h")),
                         "group_balance_cpu(struct sched_group *sg)",
                         groupAddr, cpumask, next);
 
