@@ -26,22 +26,38 @@ package com.github.francescociraolo.bcctrace;
  * @param <T> the actual type of the requested value, allows to cast it automatically.
  * @author Francesco Ciraolo
  */
-public interface Request<T> extends RequestHeader<T> {
+public interface Request<T> {
 
     static <T> Request<T> getSimpleRequest(String name, ValueType<T> valueType, String variableReference) {
-        var header = new SimpleRequestHeader<>(name, valueType);
+        var header = RequestHeader.getSimpleRequestHeader(name, valueType);
         return getSimpleRequest(header, variableReference);
     }
 
     static <T> Request<T> getSimpleRequest(RequestHeader<T> header, String variableReference) {
-        return new SimpleRequest<>(header, variableReference);
+        var request = new Request<T>() {
+
+            private RequestHeader<T> requestHeader;
+            private String variableReference;
+
+            @Override
+            public RequestHeader<T> getRequestHeader() {
+                return requestHeader;
+            }
+
+            @Override
+            public String getVariableReference() {
+                return variableReference;
+            }
+        };
+        request.requestHeader = header;
+        request.variableReference = variableReference;
+        return request;
     }
 
     /**
      * Returns the {@link RequestHeader} of this request.
-     * Commonly could be this same object, but this also allow a common header among multiple requests.
      *
-     * @return the {@link RequestHeader} of this Request.
+     * @return the {@link RequestHeader} object.
      */
     RequestHeader<T> getRequestHeader();
 

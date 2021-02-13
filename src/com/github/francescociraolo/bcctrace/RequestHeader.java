@@ -17,7 +17,24 @@ public interface RequestHeader<T> {
      * @return a simple RequestHeader
      */
     static <T> RequestHeader<T> getSimpleRequestHeader(String name, ValueType<T> valueType) {
-        return new SimpleRequestHeader<>(name, valueType);
+        var header = new RequestHeader<T>() {
+
+            private String name;
+            private ValueType<T> valueType;
+
+            @Override
+            public String getName() {
+                return name;
+            }
+
+            @Override
+            public ValueType<T> getValueType() {
+                return valueType;
+            }
+        };
+        header.name = name;
+        header.valueType = valueType;
+        return header;
     }
 
     /**

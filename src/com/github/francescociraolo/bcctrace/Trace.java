@@ -91,7 +91,8 @@ public class Trace {
         var variables = new StringBuilder();
 
         for (var request : requests) {
-            format.append(String.format("[%s=%s]", request.getName(), request.getValueType().getFormat()));
+            var header = request.getRequestHeader();
+            format.append(String.format("[%s=%s]", header.getName(), header.getValueType().getFormat()));
             if (variables.length() > 0) variables.append(", ");
             variables.append(request.getVariableReference());
         }

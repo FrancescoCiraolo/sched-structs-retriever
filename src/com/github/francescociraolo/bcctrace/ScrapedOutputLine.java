@@ -28,10 +28,14 @@ import java.nio.file.Path;
  */
 public interface ScrapedOutputLine {
 
+    default <T> T get(Request<T> request) {
+        return get(request.getRequestHeader());
+    }
+
     /**
      * Return the variable associated to the request name, if present.
      *
-     * @param requestHeader the request named as in the {@link Trace#startTracing(TraceStreamHandler, Path, String, Request[])} invocation.
+     * @param requestHeader the request named as in the {@link Trace#startTracing(TraceStreamHandler, java.util.Collection, String, Request[] invocation.
      * @param <T> actual type of the variable.
      * @return <code>T</code> object of the variable value.
      */
