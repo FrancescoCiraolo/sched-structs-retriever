@@ -1,5 +1,8 @@
 package com.github.francescociraolo.bcctrace;
 
+/**
+ * Simple BitArray implementation, here mainly for {@link BitArray#valuesFromIntString(String)}
+ */
 public class BitArray {
 
     private final int value;
