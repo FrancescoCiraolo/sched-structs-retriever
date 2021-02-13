@@ -16,8 +16,6 @@ package com.github.francescociraolo.bcctrace;
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-import java.util.stream.IntStream;
-
 /**
  * A <code>ValueType</code> object just match a c-style pattern and an caster method; it is used for define the type
  * of a request variable for {@link Trace}.
@@ -43,7 +41,7 @@ public class ValueType<T> {
     /**
      * Bit mask variable type.
      */
-    public static final ValueType<int[]> MASK = new ValueType<>("%lu", ValueType::maskExtractor);
+    public static final ValueType<int[]> BIT_ARRAY_VALUES = new ValueType<>("%lu", BitArray::valuesFromIntString);
     /**
      * String variable type.
      */
@@ -52,20 +50,6 @@ public class ValueType<T> {
      * Unsigned integer variable type.
      */
     public static final ValueType<Integer> U = new ValueType<>("%u", Integer::parseUnsignedInt);
-
-    /**
-     * Simple method for return a bit mask as 1 positions <code>int[]</code>.
-     *
-     * @param s a <code>String</code> representing the bit mask.
-     * @return the "1" positions in the bit mask.
-     */
-    private static int[] maskExtractor(String s) {
-        var mask = Integer.parseInt(s);
-        return IntStream.iterate(1 , n -> n <= mask, n -> n * 2)
-                .filter(n -> (mask & n) > 0)
-                .map(a -> (int) (Math.log(a) / Math.log(2)))
-                .toArray();
-    }
 
     private final String format;
     private final ValueCaster<T> valueCaster;

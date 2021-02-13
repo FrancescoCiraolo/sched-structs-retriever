@@ -72,7 +72,7 @@ public class SchedStructRetriever {
         var domainAddr = Request.getSimpleRequest("address", LU, "sd");
         var child = Request.getSimpleRequest("child", LU, "sd->child");
         var parent = Request.getSimpleRequest("parent", LU, "sd->parent");
-        var span = Request.getSimpleRequest("span", MASK, "sd->span[0]");
+        var span = Request.getSimpleRequest("span", BIT_ARRAY_VALUES, "sd->span[0]");
         var group = Request.getSimpleRequest("groups", LU, "sd->groups");
 
         traceTool
@@ -100,7 +100,7 @@ public class SchedStructRetriever {
 
         //The following requests are required to build the groups and to fill them.
         var groupAddr = Request.getSimpleRequest("address", LU, "sg");
-        var cpumask = Request.getSimpleRequest("cpumask", MASK, "sg->cpumask[0]");
+        var cpumask = Request.getSimpleRequest("cpumask", BIT_ARRAY_VALUES, "sg->cpumask[0]");
         var next = Request.getSimpleRequest("next", LU, "sg->next");
 
         traceTool
