@@ -1,4 +1,4 @@
-### [![Donate with Bitcoin](https://en.cryptobadges.io/badge/micro/3AijtcgVtaV7uKhwUibjSribPF7L13dJzP)](https://en.cryptobadges.io/donate/3AijtcgVtaV7uKhwUibjSribPF7L13dJzP)
+# NOTE: Right now the tool is not working at all, I'm trying to investigate the reasons behind the error. I'm sorry.
 
 # Sched Structs Retriever
 
