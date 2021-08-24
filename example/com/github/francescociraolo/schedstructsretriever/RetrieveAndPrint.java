@@ -21,6 +21,10 @@ import com.github.francescociraolo.scheddomains.Group;
 import com.github.francescociraolo.scheddomains.LinkException;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Simple executable class for test and example purpose.
@@ -62,7 +66,38 @@ public class RetrieveAndPrint {
         return builder.toString().replaceAll("\t", "  ");
     }
 
-    public static void main(String[] args) throws IOException, LinkException {
+    public static void main(String[] args) throws IOException, LinkException, URISyntaxException {
+        Path headerPath;
+
+        Class<?> clazz = RetrieveAndPrint.class;
+        headerPath = Path.of(clazz.getProtectionDomain().getCodeSource().getLocation().toURI())
+                .getParent()
+                .resolve(Path.of("headers", "header.h"));
+
+        if (!Files.exists(headerPath)) {
+            //noinspection ConstantConditions
+            byte[] header = clazz.getResourceAsStream("/res/header.h").readAllBytes();
+
+            Files.createDirectory(headerPath.getParent());
+            try (OutputStream out = Files.newOutputStream(headerPath)) {
+                out.write(header);
+            } catch (IOException ignored) {
+                headerPath = null;
+            }
+
+            if (headerPath == null) {
+                headerPath = Files.createTempFile("header", "h");
+                try (OutputStream out = Files.newOutputStream(headerPath)) {
+                    out.write(header);
+                }
+            }
+        }
+//        try {
+//
+//        } catch (IOException | URISyntaxException ex) {
+//            ex.printStackTrace();
+//        }
+
         var process = Runtime.getRuntime().exec("id -un");
         var username = new String(process.getInputStream().readAllBytes()).strip();
 
@@ -71,13 +106,13 @@ public class RetrieveAndPrint {
             System.exit(1);
         }
 
-        if (args.length == 0) {
-            System.err.println("Need a valid linux kernel source path as 1st parameter");
-            System.exit(1);
-        }
+//        if (args.length == 0) {
+//            System.err.println("Need a valid linux kernel source path as 1st parameter");
+//            System.exit(1);
+//        }
 
-        var bccPath = args.length > 1 ? args[1]  : "/usr/share/bcc";
-        var domains = SchedStructRetriever.getSchedDomains(args[0], bccPath);
+        var bccPath = args.length > 0 ? args[1]  : "/usr/share/bcc";
+        var domains = SchedStructRetriever.getSchedDomains(headerPath.toString(), bccPath);
         var simpleStats = simpleStats(domains.getCpus());
         System.out.println(simpleStats);
     }

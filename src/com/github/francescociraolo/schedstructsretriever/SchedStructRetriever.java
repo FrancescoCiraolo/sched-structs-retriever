@@ -41,14 +41,14 @@ public class SchedStructRetriever {
      *
      * Return a {@link SchedDomains} object after retrieving the data using {@link Trace}.
      *
-     * @param kernelPath the path of a linux kernel source.
+//     * @param kernelPath the path of a linux kernel source.
      * @param bccPath    the path to bcc directory.
      * @return a {@link SchedDomains} of sched domain topology in current runtime.
      * @throws IOException   could be thrown from trace's script process mainly.
      * @throws LinkException could be thrown in case of inconsistent structures.
      */
-    public static SchedDomains getSchedDomains(String kernelPath, String bccPath) throws IOException, LinkException {
-        return getSchedDomains(Path.of(kernelPath), new Trace(bccPath));
+    public static SchedDomains getSchedDomains(String headerPath, String bccPath) throws IOException, LinkException {
+        return getSchedDomains(headerPath, new Trace(bccPath));
     }
 
     /**
@@ -59,7 +59,7 @@ public class SchedStructRetriever {
      * @throws IOException   could be thrown from trace's script process mainly.
      * @throws LinkException could be thrown in case of inconsistent structures.
      */
-    public static SchedDomains getSchedDomains(Path kernelPath, Trace traceTool) throws IOException, LinkException {
+    public static SchedDomains getSchedDomains(String headerPath, Trace traceTool) throws IOException, LinkException {
 
         var cpuCount = SchedDomains.cpuCount();
         var domainsCount = SchedDomains.domainsCount();
@@ -72,7 +72,7 @@ public class SchedStructRetriever {
         var domainAddr = Request.getSimpleRequest("address", LU, "sd");
         var child = Request.getSimpleRequest("child", LU, "sd->child");
         var parent = Request.getSimpleRequest("parent", LU, "sd->parent");
-        var span = Request.getSimpleRequest("span", BIT_ARRAY_VALUES, "sd->span[0]");
+        var span = Request.getSimpleRequest("span", BIT_ARRAY_VALUES, "*(sd->span)");
         var group = Request.getSimpleRequest("groups", LU, "sd->groups");
 
         traceTool
@@ -92,7 +92,7 @@ public class SchedStructRetriever {
                                                 line.get(group),
                                                 line.get(child),
                                                 line.get(parent))),
-                        Set.of(kernelPath.resolve("include/linux/sched/topology.h")),
+                        Set.of("/usr/src/linux-headers-$(uname -r)/include/linux/sched/topology.h"),
                         "load_balance(int this_cpu, struct rq *this_rq, struct sched_domain *sd)",
                         cpu, name, domainAddr, child, parent, span, group);
 
@@ -100,7 +100,7 @@ public class SchedStructRetriever {
 
         //The following requests are required to build the groups and to fill them.
         var groupAddr = Request.getSimpleRequest("address", LU, "sg");
-        var cpumask = Request.getSimpleRequest("cpumask", BIT_ARRAY_VALUES, "sg->cpumask[0]");
+        var cpumask = Request.getSimpleRequest("cpumask", BIT_ARRAY_VALUES, "*(sg->cpumask)");
         var next = Request.getSimpleRequest("next", LU, "sg->next");
 
         traceTool
@@ -118,7 +118,7 @@ public class SchedStructRetriever {
                                                 line.get(groupAddr),
                                                 line.get(cpumask),
                                                 line.get(next))),
-                        Set.of(kernelPath.resolve("kernel/sched/sched.h")),
+                        Set.of(headerPath),
                         "group_balance_cpu(struct sched_group *sg)",
                         groupAddr, cpumask, next);
 

@@ -67,6 +67,7 @@
 
     <property name="outdir" value="${basedir}/out"/>
     <property name="library.outdir" value="${outdir}/library/schedstructsretriever"/>
+    <property name="library.resdir" value="${basedir}/res"/>
     <property name="example.outdir" value="${outdir}/example/schedstructsretriever"/>
     <property name="library:jar" value="${basedir}/sched_structs_retriever.jar"/>
     <property name="example:jar" value="${basedir}/example.jar"/>
@@ -144,6 +145,7 @@
             description="Build &#39;sched_structs_retriever.jar&#39;; the library jar">
         <jar destfile="${library:jar}" duplicate="preserve" filesetmanifest="mergewithoutmain">
             <zipfileset dir="${library.outdir}"/>
+            <zipfileset dir="${library.resdir}" prefix="res"/>
         </jar>
     </target>
 
@@ -153,6 +155,7 @@
              filesetmanifest="mergewithoutmain">
             <zipfileset dir="${library.outdir}"/>
             <zipfileset dir="${example.outdir}"/>
+            <zipfileset dir="${library.resdir}" prefix="res/"/>
         </jar>
     </target>
 

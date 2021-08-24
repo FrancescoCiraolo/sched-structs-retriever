@@ -54,7 +54,9 @@ public class Trace {
 
         Path trace = null;
         if (bccPath != null) trace = Path.of(bccPath, "tools", "trace");
-        if (trace == null || !Files.exists(trace)) trace = Path.of("/usr", "sbin", "trace-bpfcc");
+        if (trace == null || !Files.exists(trace)) trace = Path.of("/usr", "bin", "trace-bpfcc");
+        if (!Files.exists(trace)) trace = Path.of("/usr", "bin", "bpftrace");
+        if (!Files.exists(trace)) trace = Path.of("/usr", "sbin", "trace-bpfcc");
         if (!Files.exists(trace)) trace = Path.of("/usr", "sbin", "bpftrace");
         if (!Files.exists(trace)) throw new RuntimeException("Missing trace bin");
 
@@ -71,21 +73,9 @@ public class Trace {
      * @throws IOException if the process launch cause some problem
      */
     public void startTracing(TraceStreamHandler handler,
-                             Collection<Path> headersPaths,
+                             Collection<String> headersPaths,
                              String signature,
                              Request<?>... requests) throws IOException {
-
-        var missingHeaders = headersPaths
-                .stream()
-                .filter(Predicate.not(Files::exists))
-                .collect(Collectors.toSet());
-
-        if (!missingHeaders.isEmpty())
-            throw new RemoteException(String.format("Missing header files: %s",
-                    missingHeaders
-                            .stream()
-                            .map(Path::toString)
-                            .collect(Collectors.joining("; "))));
 
         var format = new StringBuilder();
         var variables = new StringBuilder();
@@ -98,12 +88,12 @@ public class Trace {
         }
 
         var command = String.format(
-                "%s -I '%s' '%s \"%s\", %s'",
+                "%s -I %s '%s \"%s\", %s'",
                 traceBin,
-                headersPaths.stream().map(Path::toString).collect(Collectors.joining(": ")),
+                String.join(": ", headersPaths),
                 signature,
-                format.toString(),
-                variables.toString());
+                format,
+                variables);
 
         var process = new ProcessBuilder("sudo", "bash", "-c", command).start();
 
