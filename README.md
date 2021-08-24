@@ -28,7 +28,7 @@ Is possible to make the library jar using `ant library` or an executable test wi
 
 ## Example
 
-Executing example, after it's been built, requires just to type `java -jar example.jar kernel_source_path [bcc_path]` replacing kernel_source_path and, optionally, the bcc_path with their actual path.
+Executing example, after it's been built, requires just to type `java -jar example.jar [bcc_path]` replacing kernel_source_path and, optionally, the bcc_path with their actual path.
 
 `java -jar example.jar`
 
